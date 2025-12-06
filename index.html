@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Advanced Calculator</title>
+<style>
+:root{
+  --bg:#f5f5f5; /* Removed red background, set light neutral */
+  --panel:#ffffff;
+  --gray:#868e96;
+  --dark-gray:#343a40;
+  --accent:#dc3545; /* Keep accent for buttons */
+  --font:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; display:flex; align-items:flex-start; justify-content:center;
+  background:var(--bg); padding:45px 0; font-family:var(--font);
+}
+.calculator{
+  width:min(90%,1200px); /* Expanded width for large screens, responsive on mobile */
+  background:var(--panel); border-radius:14px;
+  padding:16px; box-shadow:0 8px 25px rgba(0,0,0,0.25);
+}
+.display{
+  height:96px; background:#fff; border-radius:12px; padding:10px 14px;
+  margin-bottom:12px; display:flex; flex-direction:column; justify-content:center; border:1px solid #ddd;
+}
+.expr{ font-size:13px; color:#777; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:6px; }
+.result{ font-size:32px; font-weight:700; text-align:right; color:#000; word-break:break-all; }
+.keys{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+button.key{ border:none; height:56px; font-size:18px; cursor:pointer; background:var(--gray); color:#000; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.12); transition:transform .06s ease; }
+button.key:active{ transform:scale(.98); }
+button.operator{ background:var(--dark-gray); color:#fff; }
+button.clear{ background:var(--accent); color:#fff; font-weight:700; }
+button.equal{ background:var(--accent); color:#fff; font-weight:700; font-size:18px; grid-column:span 2; }
+button.wide{ grid-column:span 2; }
+.controls{ display:flex; gap:8px; margin-top:10px; align-items:center; flex-wrap:wrap; }
+.small{ font-size:13px; padding:8px 10px; border-radius:8px; background:#f5f5f5; color:#111; border:1px solid #e0e0e0; cursor:pointer; }
+.panel-advanced{ margin-top:12px; background:#fafafa; border:1px solid #eee; border-radius:10px; padding:10px; display:none; overflow:hidden; }
+.adv-grid{ 
+  display:grid; 
+  grid-template-columns:repeat(auto-fit, minmax(60px, 1fr)); 
+  gap:8px; 
+}
+.footer{ margin-top:10px; font-size:12px; color:#444; text-align:center; }
+/* Responsive adjustments */
+@media(max-width:1024px){
+  .calculator{ width:min(95%,900px); }
+}
+@media(max-width:768px){
+  .calculator{ width:min(95%,600px); }
+  .result{ font-size:28px; } 
+  button.key{ height:52px; font-size:16px; } 
+  .display{ height:100px; }
+}
+@media(max-width:480px){
+  .calculator{ width:95%; }
+  .result{ font-size:26px; } 
+  button.key{ height:50px; font-size:15px; } 
+  .display{ height:110px; }
+}
+</style>
+</head>
+<body>
+<main class="calculator" role="application" aria-label="Advanced calculator">
+<div class="display" aria-live="polite">
+  <div id="expression" class="expr"></div>
+  <div id="result" class="result">0</div>
+</div>
+
+<div class="keys" role="group" aria-label="Calculator buttons">
+  <button class="key clear" data-action="clear">AC</button>
+  <button class="key" data-action="back">⌫</button>
+  <button class="key operator" data-value="±">+/-</button>
+  <button class="key operator" data-value="%">%</button>
+  <button class="key" data-value="7">7</button>
+  <button class="key" data-value="8">8</button>
+  <button class="key" data-value="9">9</button>
+  <button class="key operator" data-value="/">÷</button>
+  <button class="key" data-value="4">4</button>
+  <button class="key" data-value="5">5</button>
+  <button class="key" data-value="6">6</button>
+  <button class="key operator" data-value="*">×</button>
+  <button class="key" data-value="1">1</button>
+  <button class="key" data-value="2">2</button>
+  <button class="key" data-value="3">3</button>
+  <button class="key operator" data-value="-">−</button>
+  <button class="key wide" data-value="0">0</button>
+  <button class="key" data-value=".">.</button>
+  <button class="key equal" data-action="equals">=</button>
+</div>
+
+<div class="controls">
+  <button id="toggle-advanced" class="small">Advanced ▾</button>
+  <div class="switch">
+    <label>Angle:</label>
+    <select id="angle-mode" class="small">
+      <option value="deg">Degree</option>
+      <option value="rad">Radian</option>
+      <option value="grad">Gradian</option>
+    </select>
+  </div>
+  <div class="switch">
+    <label>Display:</label>
+    <select id="display-mode" class="small">
+      <option value="auto">Auto</option>
+      <option value="fixed">Fixed</option>
+      <option value="scientific">Scientific</option>
+    </select>
+  </div>
+  <div class="switch">
+    <label>Fixed decimals:</label>
+    <input id="fixed-dp" type="number" min="0" max="12" value="6" style="width:74px" />
+  </div>
+</div>
+
+<div id="advanced" class="panel-advanced" aria-hidden="true">
+  <div style="margin-bottom:8px; font-weight:600">Scientific / Advanced</div>
+  <div class="adv-grid">
+    <button class="key" data-fn="sin">sin</button>
+    <button class="key" data-fn="cos">cos</button>
+    <button class="key" data-fn="tan">tan</button>
+    <button class="key" data-fn="asin">sin⁻¹</button>
+    <button class="key" data-fn="acos">cos⁻¹</button>
+    <button class="key" data-fn="atan">tan⁻¹</button>
+    <button class="key" data-fn="sinh">sinh</button>
+    <button class="key" data-fn="cosh">cosh</button>
+    <button class="key" data-fn="tanh">tanh</button>
+    <button class="key" data-fn="asinh">asinh</button>
+    <button class="key" data-fn="acosh">acosh</button>
+    <button class="key" data-fn="atanh">atanh</button>
+    <button class="key" data-fn="ln">ln</button>
+    <button class="key" data-fn="log10">log10</button>
+    <button class="key" data-fn="exp">eˣ</button>
+    <button class="key" data-fn="10pow">10ˣ</button>
+    <button class="key" data-fn="pow2">x²</button>
+    <button class="key" data-fn="pow3">x³</button>
+    <button class="key" data-fn="sqrt">√x</button>
+    <button class="key" data-fn="cbrt">³√x</button>
+    <button class="key" data-fn="pow">xʸ</button>
+    <button class="key" data-fn="factorial">n!</button>
+    <button class="key" data-fn="abs">|x|</button>
+    <button class="key" data-fn="mod">mod</button>
+    <button class="key" data-fn="nCr">nCr</button>
+    <button class="key" data-fn="nPr">nPr</button>
+    <button class="key" data-fn="pi">π</button>
+    <button class="key" data-fn="e">e</button>
+    <button class="key" data-fn="rnd">Rnd</button>
+    <button class="key" data-fn="toFraction">→ Fraction</button>
+    <button class="key" data-fn="toDecimal">→ Decimal</button>
+    <button class="key" data-fn="deg2rad">deg↔rad</button>
+    <button class="key" data-fn="polar">Polar→Rect</button>
+    <button class="key" data-fn="rect">Rect→Polar</button>
+    <button class="key" data-fn="hms">HMS↔Dec</button>
+    <button class="key" data-fn="stats">Stats</button>
+    <button class="key" data-fn="linSolve">LinearSolve</button>
+    <button class="key" data-fn="quadSolve">QuadSolve</button>
+    <button class="key" data-fn="bin">Bin</button>
+    <button class="key" data-fn="hex">Hex</button>
+    <button class="key" data-fn="and">AND</button>
+    <button class="key" data-fn="or">OR</button>
+    <button class="key" data-fn="xor">XOR</button>
+    <button class="key" data-fn="not">NOT</button>
+    <button class="key" data-fn="shl"><<</button>
+    <button class="key" data-fn="shr">>></button>
+    <button class="key" data-fn="convertTemp">C↔F</button>
+    <button class="key" data-fn="convertLen">m↔cm</button>
+  </div>
+</div>
+<div class="footer">History & advanced math included</div>
+</main>
+
+<script>
+// ---- CORE LOGIC ----
+const exprEl=document.getElementById('expression');
+const resultEl=document.getElementById('result');
+const keys=document.querySelectorAll('.keys .key');
+const advKeys=document.querySelectorAll('#advanced .key');
+const toggleAdvanced=document.getElementById('toggle-advanced');
+const advancedPanel=document.getElementById('advanced');
+const angleModeSel=document.getElementById('angle-mode');
+const displayModeSel=document.getElementById('display-mode');
+const fixedDpInput=document.getElementById('fixed-dp');
+
+let expression='';
+let computed=false;
+
+function updateExpr(){exprEl.textContent=expression;}
+function showResult(v){
+  const mode=displayModeSel.value;
+  if(v==='Error'){resultEl.textContent='Error'; return;}
+  if(typeof v==='number' && !isFinite(v)){resultEl.textContent='Error'; return;}
+  if(mode==='fixed'){
+    const dp=Math.max(0,Math.min(12,parseInt(fixedDpInput.value)||6));
+    if(typeof v==='number') resultEl.textContent=v.toFixed(dp);
+    else resultEl.textContent=v;
+  } else if(mode==='scientific'){
+    if(typeof v==='number') resultEl.textContent=v.toExponential(parseInt(fixedDpInput.value)||6);
+    else resultEl.textContent=v;
+  } else { 
+    if(typeof v==='number') resultEl.textContent=Math.round((v+Number.EPSILON)*1e12)/1e12;
+    else resultEl.textContent=v;
+  }
+}
+
+function clearAll(){expression='';computed=false;updateExpr();showResult(0);}
+function backspace(){if(computed){clearAll(); return;} expression=expression.slice(0,-1); updateExpr();}
+function appendValue(v){if(computed){if(/[0-9.]/.test(v)){expression=v;}else expression=resultEl.textContent+v; computed=false; updateExpr(); return;} expression+=v; updateExpr();}
+
+function angleToRad(x){const m=angleModeSel.value;if(m==='deg') return x*Math.PI/180;if(m==='grad') return x*Math.PI/200;return x;}
+function radToAngle(x){const m=angleModeSel.value;if(m==='deg') return x*180/Math.PI;if(m==='grad') return x*200/Math.PI;return x;}
+
+function safeEval(expr){
+  try{
+    if(!expr) return 0;
+    let e=expr.replace(/π/g,String(Math.PI)).replace(/\be\b/g,String(Math.E));
+    e=e.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/(\d+(?:\.\d*)?)%/g,'($1/100)');
+    const result=Function('"use strict";return ('+e+')')();
+    if(typeof result==='number' && isFinite(result)) return Math.round((result+Number.EPSILON)*1e12)/1e12;
+    return 'Error';
+  }catch(err){return 'Error';}
+}
+
+// --- BUTTON HANDLERS ---
+keys.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const v=btn.getAttribute('data-value');
+    const action=btn.getAttribute('data-action');
+    if(action==='clear'){clearAll(); return;}
+    if(action==='back'){backspace(); return;}
+    if(v==='±'){
+      if(expression===''||computed){expression='-'; computed=false; updateExpr(); return;}
+      const m=expression.match(/([0-9.]+)$/);
+      if(m){const num=m[1],idx=expression.lastIndexOf(num); expression=expression.slice(0,idx)+'(-'+num+')'; updateExpr(); return;}
+      expression='-'+expression; updateExpr(); return;
+    }
+    if(action==='equals'){const r=safeEval(expression); showResult(r); computed=true; return;}
+    if(v) appendValue(v);
+  });
+});
+
+// Toggle advanced
+toggleAdvanced.onclick=()=>{
+  if(advancedPanel.style.display==='block'){advancedPanel.style.display='none'; toggleAdvanced.textContent='Advanced ▾'; advancedPanel.setAttribute('aria-hidden','true');}
+  else{advancedPanel.style.display='block'; toggleAdvanced.textContent='Advanced ▴'; advancedPanel.setAttribute('aria-hidden','false');}
+};
+
+// Advanced functions
+advKeys.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const fn=btn.dataset.fn;
+    let cur=safeEval(expression);
+    if(isNaN(cur)) cur=0;
+    let val;
+    try{
+      switch(fn){
+        case'sin':val=Math.sin(angleToRad(cur)); break;
+        case'cos':val=Math.cos(angleToRad(cur)); break;
+        case'tan':val=Math.tan(angleToRad(cur)); break;
+        case'asin':val=radToAngle(Math.asin(cur)); break;
+        case'acos':val=radToAngle(Math.acos(cur)); break;
+        case'atan':val=radToAngle(Math.atan(cur)); break;
+        case'sinh':val=Math.sinh(cur); break;
+        case'cosh':val=Math.cosh(cur); break;
+        case'tanh':val=Math.tanh(cur); break;
+        case'asinh':val=Math.asinh(cur); break;
+        case'acosh':val=Math.acosh(cur); break;
+        case'atanh':val=Math.atanh(cur); break;
+        case'ln':val=Math.log(cur); break;
+        case'log10':val=Math.log10(cur); break;
+        case'exp':val=Math.exp(cur); break;
+        case'10pow':val=Math.pow(10,cur); break;
+        case'pow2':val=Math.pow(cur,2); break;
+        case'pow3':val=Math.pow(cur,3); break;
+        case'sqrt':val=cur<0?'Error':Math.sqrt(cur); break;
+        case'cbrt':val=Math.cbrt(cur); break;
+        case'abs':val=Math.abs(cur); break;
+        case'pi':val=Math.PI; break;
+        case'e':val=Math.E; break;
+        case'rnd':val=Math.random(); break;
+        default: val='Error'; break;
+      }
+    }catch(e){val='Error';}
+    expression=String(val);
+    showResult(val);
+    computed=true;
+  });
+});
+
+clearAll();
+</script>
+</body>
+</html>
