@@ -1,0 +1,407 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8"></meta>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"></meta>
+    <title>Advanced Scientific Calculator</title>
+    <style>
+        /* --- CSS STYLES --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Prevent double-tap zoom on mobile */
+            touch-action: manipulation;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f4; 
+        }
+
+        .calculator {
+            /* --- DEFAULT MODE (Responsive) --- */
+            /* Width is flexible now, but caps at 400px for desktop 'normal' size */
+            width: 95%; 
+            max-width: 400px; 
+            
+            background-color: #333;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            overflow: hidden;
+            padding: 12px; 
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            margin: 10px; /* Small margin on mobile */
+        }
+
+        /* --- FULL SCREEN MODE ADJUSTMENTS --- */
+        .calculator.fullscreen {
+            /* Restrict width to 'post article size' (approx 800px) on desktop */
+            width: 95%;
+            max-width: 800px; 
+            height: 95vh; 
+            border-radius: 10px;
+            padding: 25px;
+            margin: 0;
+        }
+
+        /* --- TOOLBAR (History & Fullscreen toggles) --- */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .tool-btn {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 2px 5px;
+            transition: color 0.2s;
+        }
+        .tool-btn:hover { color: white; }
+
+        /* --- HISTORY PANEL --- */
+        .history-panel {
+            position: absolute;
+            top: 55px; 
+            left: 0;
+            width: 100%;
+            height: calc(100% - 55px);
+            background-color: rgba(34, 34, 34, 0.98);
+            z-index: 10;
+            display: none; 
+            flex-direction: column;
+            padding: 15px;
+            overflow-y: auto;
+            color: white;
+        }
+        .history-panel.show { display: flex; }
+        .history-item {
+            border-bottom: 1px solid #444;
+            padding: 8px 0;
+            font-size: 0.95rem;
+            text-align: right;
+            cursor: pointer;
+        }
+        .history-item:hover { color: #f39c12; }
+        .hist-exp { color: #aaa; font-size: 0.8rem; display: block; margin-bottom: 2px; }
+        .hist-res { font-weight: bold; font-size: 1.1rem; }
+
+        /* --- DISPLAY SCREEN --- */
+        #display {
+            width: 100%;
+            height: 70px; 
+            background-color: #ecf0f1; 
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-align: right;
+            padding: 5px 15px;
+            
+            /* High visibility font */
+            font-size: 2.2rem; 
+            font-weight: 700;
+            color: #222;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- BUTTONS GRID --- */
+        .keys {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px; 
+            flex-grow: 1; 
+        }
+
+        button {
+            height: 40px; 
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: #444; 
+            color: white;
+            box-shadow: 0 3px 0 #222;
+        }
+
+        /* In fullscreen, buttons stretch */
+        .calculator.fullscreen button {
+            height: auto; 
+            font-size: 1.4rem;
+        }
+
+        /* --- HOVER ANIMATION --- */
+        button:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+            box-shadow: 0 5px 0 #111;
+        }
+        button:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        /* --- SPECIFIC COLORS --- */
+        .btn-red {
+            background-color: #e74c3c;
+            color: white;
+            box-shadow: 0 3px 0 #c0392b;
+        }
+
+        .operator {
+            background-color: #f39c12;
+            color: white;
+            box-shadow: 0 3px 0 #d35400;
+        }
+
+        .sci-key {
+            background-color: #2c3e50;
+            font-size: 0.9rem; 
+            box-shadow: 0 3px 0 #1a252f;
+        }
+        
+        .sci-key.small-text { font-size: 0.75rem; }
+
+        .span-2 { grid-column: span 2; }
+
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media (max-width: 500px) {
+            .calculator {
+                /* On small phones, reduce padding slightly */
+                padding: 10px;
+                width: 100%;
+                max-width: 100%;
+                margin: 0;
+                border-radius: 0; /* Flat edges on mobile look better if full width */
+                height: 100vh; /* Fill screen on mobile default view for better usability */
+            }
+
+            /* Adjust Fullscreen behavior on mobile */
+            .calculator.fullscreen {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+                padding: 10px;
+            }
+
+            /* Scale down fonts slightly so they don't overflow */
+            #display {
+                font-size: 2rem;
+                height: 60px;
+            }
+            button {
+                font-size: 1rem;
+            }
+            .sci-key.small-text {
+                font-size: 0.7rem;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="calculator" id="mainCalc">
+        
+        <!-- Toolbar for Tools -->
+        <div class="toolbar">
+            <button class="tool-btn" onclick="toggleHistory()" title="History">🕒 History</button>
+            <button class="tool-btn" onclick="toggleFullScreen()" title="Full Screen">⛶</button>
+        </div>
+
+        <!-- History Overlay -->
+        <div class="history-panel" id="historyPanel">
+            <div style="color: #888888; margin-bottom: 10px; text-align: center;">Calculation History</div>
+            <div id="historyList"></div>
+            <button onclick="clearHistory()" style="background: #e74c3c; height: 40px; margin-top: 10px;">Clear History</button>
+        </div>
+
+        <!-- Display Screen -->
+        <input id="display" placeholder="0" readonly="" type="text" />
+
+        <div class="keys">
+            <!-- BASIC KEYS SECTION (TOP) -->
+            <button class="btn-red" onclick="clearDisplay()">AC</button>
+            <button class="btn-red" onclick="deleteLast()">DEL</button>
+            <button class="operator" onclick="appendToDisplay('%')">%</button>
+            <button class="operator" onclick="appendToDisplay('/')">÷</button>
+
+            <button onclick="appendToDisplay('7')">7</button>
+            <button onclick="appendToDisplay('8')">8</button>
+            <button onclick="appendToDisplay('9')">9</button>
+            <button class="operator" onclick="appendToDisplay('*')">×</button>
+
+            <button onclick="appendToDisplay('4')">4</button>
+            <button onclick="appendToDisplay('5')">5</button>
+            <button onclick="appendToDisplay('6')">6</button>
+            <button class="operator" onclick="appendToDisplay('-')">−</button>
+
+            <button onclick="appendToDisplay('1')">1</button>
+            <button onclick="appendToDisplay('2')">2</button>
+            <button onclick="appendToDisplay('3')">3</button>
+            <button class="operator" onclick="appendToDisplay('+')">+</button>
+
+            <button onclick="appendToDisplay('0')">0</button>
+            <button onclick="appendToDisplay('.')">.</button>
+            <button class="btn-red span-2" onclick="calculateResult()">=</button>
+
+            <!-- SCIENTIFIC KEYS SECTION (BOTTOM) -->
+            <button class="sci-key" onclick="appendToDisplay('sin(')">sin</button>
+            <button class="sci-key" onclick="appendToDisplay('cos(')">cos</button>
+            <button class="sci-key" onclick="appendToDisplay('tan(')">tan</button>
+            <button class="sci-key" onclick="appendToDisplay('^')">x^y</button>
+
+            <button class="sci-key small-text" onclick="appendToDisplay('asin(')">sin⁻¹</button>
+            <button class="sci-key small-text" onclick="appendToDisplay('acos(')">cos⁻¹</button>
+            <button class="sci-key small-text" onclick="appendToDisplay('atan(')">tan⁻¹</button>
+            <button class="sci-key" onclick="appendToDisplay('fact(')">n!</button>
+
+            <button class="sci-key" onclick="appendToDisplay('log(')">log</button>
+            <button class="sci-key" onclick="appendToDisplay('ln(')">ln</button>
+            <button class="sci-key" onclick="appendToDisplay('sqrt(')">√</button>
+            <button class="sci-key" onclick="appendToDisplay('cbrt(')">∛</button>
+            
+            <button class="sci-key" onclick="appendToDisplay('(')">(</button>
+            <button class="sci-key" onclick="appendToDisplay(')')">)</button>
+            <button class="sci-key" onclick="appendToDisplay('pi')">π</button>
+            <button class="sci-key" onclick="appendToDisplay('e')">e</button>
+
+            <button class="sci-key" onclick="appendToDisplay('inv(')">1/x</button>
+            <button class="sci-key" onclick="appendToDisplay('tenpow(')">10^x</button>
+            <button class="sci-key" onclick="appendToDisplay('exp(')">exp</button>
+            <button class="sci-key" onclick="appendToDisplay('abs(')">|x|</button>
+        </div>
+    </div>
+
+    <script>
+        /* --- JAVASCRIPT LOGIC (UNCHANGED) --- */
+        const display = document.getElementById('display');
+        const calcContainer = document.getElementById('mainCalc');
+        const historyPanel = document.getElementById('historyPanel');
+        const historyList = document.getElementById('historyList');
+        
+        let historyData = [];
+
+        function toggleFullScreen() {
+            calcContainer.classList.toggle('fullscreen');
+        }
+
+        function toggleHistory() {
+            if (historyPanel.style.display === 'flex') {
+                historyPanel.style.display = 'none';
+            } else {
+                historyPanel.style.display = 'flex';
+            }
+        }
+
+        function appendToDisplay(input) {
+            if(display.value === 'Error') {
+                display.value = '';
+            }
+            display.value += input;
+            display.scrollLeft = display.scrollWidth;
+        }
+
+        function clearDisplay() {
+            display.value = '';
+        }
+
+        function deleteLast() {
+            if(display.value === 'Error') return clearDisplay();
+            display.value = display.value.slice(0, -1);
+        }
+
+        function factorial(n) {
+            if (n < 0) return NaN;
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) result *= i;
+            return result;
+        }
+
+        function calculateResult() {
+            let originalInput = display.value;
+            if(!originalInput) return;
+
+            try {
+                let expression = originalInput;
+
+                expression = expression.replace(/sin\(/g, 'Math.sin(');
+                expression = expression.replace(/cos\(/g, 'Math.cos(');
+                expression = expression.replace(/tan\(/g, 'Math.tan(');
+                expression = expression.replace(/log\(/g, 'Math.log10(');
+                expression = expression.replace(/ln\(/g, 'Math.log(');
+                expression = expression.replace(/sqrt\(/g, 'Math.sqrt(');
+                expression = expression.replace(/cbrt\(/g, 'Math.cbrt(');
+                expression = expression.replace(/pi/g, 'Math.PI');
+                expression = expression.replace(/e/g, 'Math.E');
+                expression = expression.replace(/\^/g, '**'); 
+
+                expression = expression.replace(/asin\(/g, 'Math.asin(');
+                expression = expression.replace(/acos\(/g, 'Math.acos(');
+                expression = expression.replace(/atan\(/g, 'Math.atan(');
+                expression = expression.replace(/abs\(/g, 'Math.abs(');
+                expression = expression.replace(/exp\(/g, 'Math.exp(');
+                
+                expression = expression.replace(/inv\(([^)]+)\)/g, '(1/$1)');
+                expression = expression.replace(/tenpow\(([^)]+)\)/g, '(10**$1)');
+                
+                expression = expression.replace(/fact\(/g, 'factorial(');
+
+                let result = eval(expression);
+
+                if (result % 1 !== 0) {
+                    result = parseFloat(result.toFixed(8)); 
+                }
+
+                if (!isFinite(result) || isNaN(result)) {
+                    display.value = "Error";
+                } else {
+                    display.value = result;
+                    addToHistory(originalInput, result);
+                }
+
+            } catch (error) {
+                display.value = "Error";
+            }
+        }
+
+        function addToHistory(exp, res) {
+            historyData.unshift({ expression: exp, result: res });
+            if(historyData.length > 20) historyData.pop(); 
+            renderHistory();
+        }
+
+        function renderHistory() {
+            historyList.innerHTML = '';
+            historyData.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `<span class="hist-exp">${item.expression} =</span> <span class="hist-res">${item.result}</span>`;
+                div.onclick = () => {
+                    display.value = item.result;
+                    toggleHistory(); 
+                };
+                historyList.appendChild(div);
+            });
+        }
+
+        function clearHistory() {
+            historyData = [];
+            renderHistory();
+        }
+    </script>
+</body>
+</html><div><br /></div><br /><br /><div><br /></div>
